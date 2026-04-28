@@ -25,6 +25,7 @@ SDK 不内置请求库，不使用 IndexedDB。请求能力和缓存能力均由
 - 支持暂停、恢复、取消上传任务。
 - 支持使用调用方注入的私有缓存方法保存上传状态。
 - 支持可选的 `useLargeFileUpload` React Hook。
+- 不支持零字节文件；小文件是否进入分片流程由调用方或后端能力决定。
 
 ## 3. 接口约定
 
@@ -51,6 +52,7 @@ type RequestAdapter = <T>(config: RequestConfig) => Promise<{
   message: string;
   traceId?: string;
   result: T;
+  httpStatus?: number;
 }>;
 
 type HashAdapter = (input: Blob, options?: {
@@ -70,6 +72,21 @@ type ProgressInfo = {
   currentChunk?: number;
   docId?: string;
 };
+
+type UploadTaskState =
+  | 'idle'
+  | 'hashing'
+  | 'initializing'
+  | 'uploading'
+  | 'paused'
+  | 'merging'
+  | 'success'
+  | 'failed'
+  | 'canceled';
+
+class CancelError extends Error {
+  name: 'CancelError';
+}
 ```
 
 ### 3.2 SDK 主要入口
@@ -83,8 +100,13 @@ const uploader = createLargeFileUploader({
   deletePrivateDb,
   hash,
   concurrency,
+  minConcurrency,
+  maxConcurrency,
   initTimeout,
+  initMaxRetries,
   mergeTimeout,
+  mergeMaxRetries,
+  cacheExpireDays,
 });
 
 const task = uploader.upload(file, {
@@ -98,13 +120,28 @@ const task = uploader.upload(file, {
 
 task.pause();
 task.resume();
-task.cancel();
+task.cancel({ clearCache: true });
 await task.promise;
 ```
 
+上传入口必须先做防御性校验：
+
+- `file.size === 0` 时直接抛出业务错误，不进入 hash、init 或分片流程，避免进度计算出现 `NaN`。
+- 当 `file.size <= chunkSize` 时，若服务端分片接口不支持单分片合并，调用方应走普通直传接口；若服务端支持单分片合并，SDK 可以按 `chunks = 1` 处理。
+- `chunkSize` 超过 `10MB` 时直接拒绝，避免违背服务端分片约束。
+- `concurrency` 必须是正整数，超出范围时按配置边界夹取或抛出配置错误。
+
+`task.promise` 的生命周期规则必须稳定：
+
+- `pause()`：任务进入 `paused`，中止正在上传的分片请求，`task.promise` 保持 pending。
+- `resume()`：任务复用原来的 `task.promise`，继续上传未完成分片，不创建新的 Promise。
+- `cancel()`：任务进入 `canceled`，中止请求并 reject `task.promise`，错误类型为 `CancelError`。
+- 致命错误：任务进入 `failed`，reject `task.promise`，保留缓存供后续恢复。
+- 成功完成：任务进入 `success`，resolve `task.promise`，删除缓存。
+
 ### 3.3 React Hook 封装
 
-SDK 核心不依赖 React，React 场景额外提供 `useLargeFileUpload`。Hook 只负责状态管理和组件生命周期绑定，不改变核心上传行为。
+SDK 核心不依赖 React，React 场景额外提供 `useLargeFileUpload`。推荐采用全局单例上传管理器，Hook 只订阅全局任务状态并向组件暴露操作方法，不把上传任务绑定在单个页面组件的局部 state 上。
 
 ```ts
 const {
@@ -124,6 +161,13 @@ const {
   concurrency,
 });
 ```
+
+Hook 生命周期约定：
+
+- 组件卸载时，Hook 必须取消自身订阅，禁止继续触发该组件的 `setState`。
+- 默认不自动暂停上传任务，上传任务由全局单例继续运行，适合跨路由展示全局上传进度。
+- 如果业务需要页面卸载即暂停，可在 Hook 选项中提供 `pauseOnUnmount: true`，由 cleanup 调用 `task.pause()`。
+- 全局上传进度 UI 推荐挂在应用根部，或接入 Zustand、Redux 等全局状态。
 
 ## 4. 实现过程流程图
 
@@ -160,6 +204,7 @@ const {
 - GB 级文件禁止在主线程同步计算 hash。SDK 默认使用 Web Worker 执行 SHA-256 计算，避免阻塞 React UI。
 - SDK 支持调用方注入 `hash` 方法，用于接入业务侧已有的 Worker、WASM 或后端预计算能力。
 - 恢复上传时允许先用非 hash 缓存 key 找到任务，再异步校验整文件 hash，避免每次刷新都必须先完整 hash 才能恢复。
+- `HashAdapter` 必须完整响应 `AbortSignal`。如果采用 Web Worker 计算 hash，在收到 `abort` 事件时必须调用 `worker.terminate()` 强制释放线程，不能只丢弃 Promise。
 
 ### 7.3 请求适配
 
@@ -171,8 +216,17 @@ SDK 不直接依赖 `fetch`、`axios` 或其他请求库。调用方通过 `requ
 - 网关错误处理
 - `AbortSignal`
 - 超时控制
+- HTTP 状态码或可分类的业务错误码
 
-### 7.4 超时与重试分层
+### 7.4 白名单校验
+
+`whiteList` 只作为体验层面的前端预过滤，不作为安全边界。
+
+- 前端建议优先按文件后缀名校验，例如 `.pdf,.docx,.xlsx`，避免部分浏览器或设备返回空 `file.type`。
+- MIME type 可作为辅助信息，但不能作为唯一判断依据。
+- 文件安全性、真实格式、内容合法性必须由服务端在 `init` 或 `merge` 阶段最终校验。
+
+### 7.5 超时与重试分层
 
 不同接口的耗时特征不同，不能使用同一套重试策略：
 
@@ -180,7 +234,30 @@ SDK 不直接依赖 `fetch`、`axios` 或其他请求库。调用方通过 `requ
 - `upload`：以分片为单位重试，失败后只重传当前分片。
 - `merge`：服务端可能需要合并大量分片，建议提供独立的 `mergeTimeout` 和 `mergeMaxRetries`。
 
+SDK 内部必须区分可恢复错误和致命错误：
+
+- 可重试：网络断开、请求超时、`408`、`429`、`502`、`503`、`504`。
+- 快速失败：`400`、`401`、`403`、`404`、`409`、`413`、`415` 等客户端错误或业务明确拒绝的错误。
+- `401/403` 应立即停止任务并抛出鉴权/权限错误，交由业务侧刷新登录态或提示用户。
+- `413/415` 应立即停止任务，提示文件大小或类型不符合服务端规则。
+
 如果服务端合并耗时较长，推荐将 `merge` 改造成异步任务接口：前端提交合并任务后轮询合并状态，避免网关超时导致前端无法判断最终结果。
+
+### 7.6 服务端幂等性要求
+
+前端会对 `merge` 执行独立重试，因此服务端 `merge` 接口必须具备幂等性：
+
+- 同一个 `docId + checkCode` 重复调用 `merge`，如果文件已合并完成，应直接返回 `200 success`。
+- 如果第一次 `merge` 已完成但响应在网关层超时，第二次 `merge` 不能因为临时分片已删除而返回失败。
+- 如果服务端处于合并中状态，应返回可识别的处理中状态，或保持请求直到成功/失败。
+- 服务端应有临时分片清理策略，清理窗口需要大于前端缓存过期时间。
+
+### 7.7 并发控制
+
+- 默认 `concurrency` 建议为 `3`。
+- 推荐允许配置 `minConcurrency` 和 `maxConcurrency`，默认范围为 `1-4`。
+- V1 可以采用固定并发，但必须限制最大并发，避免调用方配置过大导致浏览器连接排队或弱网下集中超时。
+- 高阶版本可加入拥塞控制：连续出现超时或 `502/503/504` 时自动降低并发；网络恢复稳定后再逐步提升，但不超过 `maxConcurrency`。
 
 ## 8. 缓存与断点续传策略
 
@@ -212,6 +289,7 @@ type UploadCache = {
   uploadedChunks: number[];
   createdAt: number;
   updatedAt: number;
+  status: UploadTaskState;
 };
 ```
 
@@ -219,26 +297,43 @@ type UploadCache = {
 
 缓存 adapter 使用对象类型交互，序列化和存储细节由调用方负责。这样 SDK 不强制调用方必须使用字符串存储，也避免 getter/setter 类型不一致。
 
+为避免僵尸缓存长期占用本地存储，SDK 初始化时提供 `cacheExpireDays` 配置，默认建议为 `7` 天。`createLargeFileUploader` 启动后应清理超过过期时间且未更新的上传缓存；清理时只删除本地缓存，服务端临时分片由后端 TTL 任务负责回收。
+
 ## 9. 异常与重试策略
 
 - 分片上传失败后自动重试。
 - 默认最大重试次数建议为 `3`。
 - 超过重试次数后任务失败，并保留缓存。
+- 只有可恢复错误进入重试；鉴权、权限、文件类型、文件大小等致命错误必须 Fail Fast。
 - `pause()` 停止调度新的分片，并通过 `AbortController.abort()` 取消正在上传的分片请求。被取消的分片标记为未完成，恢复时重新上传。
 - `resume()` 继续调度剩余分片。
-- `cancel()` 中止请求并停止任务，同时保留缓存，便于后续恢复。
+- `cancel({ clearCache = true })` 中止请求并停止任务，默认删除缓存，符合用户主动放弃上传的语义。
+- `cancel({ clearCache: false })` 中止请求并停止任务，但保留缓存，适用于业务希望稍后恢复的场景。
 - `merge` 失败时不删除缓存，按照独立的 merge 重试策略处理。超过重试次数后任务进入失败态，由业务 UI 提示用户重试或稍后恢复。
 
 ## 10. 测试建议
 
 - 首次上传完整成功。
+- 零字节文件直接失败，不调用 hash、init、upload 或 merge。
+- 小于单分片大小的文件按服务端能力选择普通直传或单分片流程。
 - 上传一部分后刷新页面，恢复时跳过已上传分片。
 - 分片失败后自动重试并最终成功。
+- `401/403/415/413` 等致命错误不会重试，任务快速失败。
+- `502/503/504`、超时和网络错误会按策略重试。
 - 分片超过最大重试次数后任务失败且缓存保留。
 - `pause()` 后不再调度新分片，并取消正在上传的分片请求。
-- `resume()` 后继续上传剩余分片。
-- `cancel()` 后请求被中止且缓存保留。
+- `pause()` 后 `task.promise` 保持 pending。
+- `resume()` 后继续上传剩余分片，并复用原 `task.promise`。
+- `cancel()` 后请求被中止，`task.promise` 以 `CancelError` reject，默认删除缓存。
+- `cancel({ clearCache: false })` 后请求被中止，`task.promise` 以 `CancelError` reject，但缓存保留。
 - `merge` 成功后缓存被删除。
 - `merge` 超时后按独立策略重试，最终失败时缓存保留。
+- 服务端在已合并完成后收到重复 `merge` 请求，应返回成功。
 - GB 级文件 hash 计算期间 React UI 不阻塞。
 - 刷新恢复时无需先完成整文件 hash 才能命中缓存。
+- Hook 所在组件卸载后不再触发该组件的状态更新。
+- 全局单例上传任务在路由切换后继续运行。
+- 超过 `cacheExpireDays` 的本地上传缓存会被自动清理。
+- Hash 阶段执行 `pause()` 或 `cancel()` 时，Worker 被 `terminate()`，CPU 不再继续消耗。
+- `whiteList` 对空 MIME type 文件仍能按后缀名处理，最终安全校验由服务端完成。
+- `concurrency` 超出允许范围时被限制或抛出配置错误；弱网连续超时时可降低并发。
