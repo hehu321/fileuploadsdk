@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1320" viewBox="0 0 1900 1320">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#64748b"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .actor { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+      .actor-sdk { fill: #eff6ff; stroke: #93c5fd; stroke-width: 2; }
+      .actor-cache { fill: #ecfdf5; stroke: #86efac; stroke-width: 2; }
+      .actor-request { fill: #fff7ed; stroke: #fdba74; stroke-width: 2; }
+      .actor-api { fill: #f5f3ff; stroke: #c4b5fd; stroke-width: 2; }
+      .text { font: 700 21px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #0f172a; }
+      .small { font: 400 17px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #475569; }
+      .tiny { font: 400 15px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #64748b; }
+      .label { font: 700 16px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #1d4ed8; }
+      .return-label { font: 700 16px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #475569; }
+      .note-title { font: 700 18px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #334155; }
+      .lifeline { stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 7 8; }
+      .activation { fill: #dbeafe; stroke: #60a5fa; stroke-width: 1.5; }
+      .activation-green { fill: #dcfce7; stroke: #86efac; stroke-width: 1.5; }
+      .activation-orange { fill: #ffedd5; stroke: #fdba74; stroke-width: 1.5; }
+      .message { stroke: #2563eb; stroke-width: 2.5; marker-end: url(#arrow); }
+      .return { stroke: #64748b; stroke-width: 2; stroke-dasharray: 8 7; marker-end: url(#arrow-gray); }
+      .note { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+      .loop { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 9 7; }
+      .loop-title { fill: #f1f5f9; stroke: #94a3b8; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1900" height="1320"/>
+
+  <rect x="35" y="35" width="170" height="75" rx="14" class="actor"/>
+  <text x="120" y="67" text-anchor="middle" class="text">User</text>
+  <text x="120" y="94" text-anchor="middle" class="tiny">选择文件</text>
+
+  <rect x="255" y="35" width="190" height="75" rx="14" class="actor"/>
+  <text x="350" y="67" text-anchor="middle" class="text">React App</text>
+  <text x="350" y="94" text-anchor="middle" class="tiny">UI / Hook</text>
+
+  <rect x="505" y="35" width="220" height="75" rx="14" class="actor-sdk"/>
+  <text x="615" y="67" text-anchor="middle" class="text">Upload SDK</text>
+  <text x="615" y="94" text-anchor="middle" class="tiny">调度与状态机</text>
+
+  <rect x="790" y="35" width="210" height="75" rx="14" class="actor-cache"/>
+  <text x="895" y="67" text-anchor="middle" class="text">Cache Adapter</text>
+  <text x="895" y="94" text-anchor="middle" class="tiny">私有缓存方法</text>
+
+  <rect x="1060" y="35" width="220" height="75" rx="14" class="actor-request"/>
+  <text x="1170" y="67" text-anchor="middle" class="text">Request Adapter</text>
+  <text x="1170" y="94" text-anchor="middle" class="tiny">业务请求层</text>
+
+  <rect x="1335" y="35" width="160" height="75" rx="14" class="actor-api"/>
+  <text x="1415" y="67" text-anchor="middle" class="text">Init API</text>
+  <text x="1415" y="94" text-anchor="middle" class="tiny">type=init</text>
+
+  <rect x="1540" y="35" width="170" height="75" rx="14" class="actor-api"/>
+  <text x="1625" y="67" text-anchor="middle" class="text">Upload API</text>
+  <text x="1625" y="94" text-anchor="middle" class="tiny">type=upload</text>
+
+  <rect x="1745" y="35" width="140" height="75" rx="14" class="actor-api"/>
+  <text x="1815" y="67" text-anchor="middle" class="text">Merge API</text>
+  <text x="1815" y="94" text-anchor="middle" class="tiny">type=merge</text>
+
+  <line x1="120" y1="110" x2="120" y2="1260" class="lifeline"/>
+  <line x1="350" y1="110" x2="350" y2="1260" class="lifeline"/>
+  <line x1="615" y1="110" x2="615" y2="1260" class="lifeline"/>
+  <line x1="895" y1="110" x2="895" y2="1260" class="lifeline"/>
+  <line x1="1170" y1="110" x2="1170" y2="1260" class="lifeline"/>
+  <line x1="1415" y1="110" x2="1415" y2="1260" class="lifeline"/>
+  <line x1="1625" y1="110" x2="1625" y2="1260" class="lifeline"/>
+  <line x1="1815" y1="110" x2="1815" y2="1260" class="lifeline"/>
+
+  <rect x="605" y="165" width="20" height="1020" rx="8" class="activation"/>
+  <rect x="885" y="295" width="20" height="120" rx="8" class="activation-green"/>
+  <rect x="1160" y="485" width="20" height="605" rx="8" class="activation-orange"/>
+  <rect x="1405" y="535" width="20" height="90" rx="8" class="activation"/>
+  <rect x="1615" y="765" width="20" height="105" rx="8" class="activation"/>
+  <rect x="1805" y="1020" width="20" height="90" rx="8" class="activation"/>
+
+  <line x1="120" y1="165" x2="350" y2="165" class="message"/>
+  <text x="180" y="150" class="label">选择文件并点击上传</text>
+
+  <line x1="350" y1="220" x2="615" y2="220" class="message"/>
+  <text x="405" y="205" class="label">upload(file, options)</text>
+  <text x="405" y="242" class="tiny">projectId / concurrency / request / cache methods</text>
+
+  <path d="M625 275 C720 245, 720 325, 625 298" class="message" fill="none"/>
+  <text x="645" y="270" class="label">校验参数与分片数量</text>
+
+  <line x1="615" y1="335" x2="895" y2="335" class="message"/>
+  <text x="665" y="320" class="label">getPrivateDb(cacheKey)</text>
+
+  <line x1="895" y1="395" x2="615" y2="395" class="return"/>
+  <text x="680" y="382" class="return-label">返回缓存或空值</text>
+
+  <path d="M625 455 C755 415, 755 500, 625 482" class="message" fill="none"/>
+  <text x="645" y="448" class="label">计算整文件 SHA-256</text>
+  <text x="645" y="476" class="tiny">回调 phase = hashing</text>
+
+  <rect x="575" y="505" width="875" height="155" rx="18" class="loop"/>
+  <rect x="575" y="505" width="170" height="34" rx="10" class="loop-title"/>
+  <text x="595" y="528" class="note-title">alt 无有效缓存</text>
+
+  <line x1="615" y1="555" x2="1170" y2="555" class="message"/>
+  <text x="690" y="540" class="label">request(init)</text>
+
+  <line x1="1170" y1="600" x2="1415" y2="600" class="message"/>
+  <text x="1210" y="585" class="label">POST /chunk/documents?type=init</text>
+
+  <line x1="1415" y1="640" x2="1170" y2="640" class="return"/>
+  <text x="1235" y="628" class="return-label">docId / chunks / docVersion</text>
+
+  <line x1="1170" y1="675" x2="615" y2="675" class="return"/>
+  <text x="770" y="663" class="return-label">返回初始化结果</text>
+
+  <line x1="615" y1="720" x2="895" y2="720" class="message"/>
+  <text x="665" y="705" class="label">savePrivateDb(cacheKey, task)</text>
+
+  <rect x="575" y="745" width="1115" height="185" rx="18" class="loop"/>
+  <rect x="575" y="745" width="235" height="34" rx="10" class="loop-title"/>
+  <text x="595" y="768" class="note-title">loop 并发上传未完成分片</text>
+
+  <path d="M625 805 C760 765, 760 850, 625 832" class="message" fill="none"/>
+  <text x="645" y="800" class="label">计算当前分片 SHA-256</text>
+
+  <line x1="615" y1="855" x2="1170" y2="855" class="message"/>
+  <text x="690" y="840" class="label">request(upload FormData)</text>
+
+  <line x1="1170" y1="900" x2="1625" y2="900" class="message"/>
+  <text x="1245" y="885" class="label">POST /chunk/documents?type=upload</text>
+
+  <line x1="1625" y1="940" x2="1170" y2="940" class="return"/>
+  <text x="1305" y="928" class="return-label">status = 200</text>
+
+  <line x1="1170" y1="980" x2="615" y2="980" class="return"/>
+  <text x="795" y="968" class="return-label">分片成功</text>
+
+  <line x1="615" y1="1025" x2="895" y2="1025" class="message"/>
+  <text x="665" y="1010" class="label">savePrivateDb(uploadedChunks)</text>
+
+  <line x1="615" y1="1075" x2="350" y2="1075" class="return"/>
+  <text x="420" y="1062" class="return-label">onProgress(uploading)</text>
+
+  <rect x="575" y="1120" width="1290" height="115" rx="18" class="loop"/>
+  <rect x="575" y="1120" width="175" height="34" rx="10" class="loop-title"/>
+  <text x="595" y="1143" class="note-title">alt 全部分片完成</text>
+
+  <line x1="615" y1="1175" x2="1170" y2="1175" class="message"/>
+  <text x="690" y="1160" class="label">request(merge)</text>
+
+  <line x1="1170" y1="1215" x2="1815" y2="1215" class="message"/>
+  <text x="1275" y="1200" class="label">POST /chunk/documents?type=merge</text>
+
+  <line x1="1815" y1="1255" x2="1170" y2="1255" class="return"/>
+  <text x="1425" y="1243" class="return-label">merge success</text>
+
+  <line x1="1170" y1="1290" x2="615" y2="1290" class="return"/>
+  <text x="780" y="1278" class="return-label">返回合并成功</text>
+
+  <line x1="615" y1="1140" x2="895" y2="1140" class="message"/>
+  <text x="665" y="1125" class="label">deletePrivateDb(cacheKey)</text>
+
+  <line x1="615" y1="1240" x2="350" y2="1240" class="return"/>
+  <text x="415" y="1228" class="return-label">onProgress(success) / promise resolve</text>
+
+  <rect x="55" y="1160" width="420" height="95" rx="16" class="note"/>
+  <text x="80" y="1190" class="note-title">失败与控制策略</text>
+  <text x="80" y="1218" class="small">分片失败按配置自动重试；超过次数失败。</text>
+  <text x="80" y="1246" class="small">pause 暂停调度，cancel 中止请求，均保留缓存。</text>
+</svg>

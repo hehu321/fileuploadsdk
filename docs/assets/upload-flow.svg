@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1330" viewBox="0 0 1800 1330">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 42px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 22px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #475569; }
+      .phase { font: 700 22px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #334155; }
+      .node { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+      .node-blue { fill: #eff6ff; stroke: #93c5fd; stroke-width: 2; }
+      .node-green { fill: #ecfdf5; stroke: #86efac; stroke-width: 2; }
+      .node-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 2; }
+      .node-red { fill: #fef2f2; stroke: #fca5a5; stroke-width: 2; }
+      .decision { fill: #ffffff; stroke: #94a3b8; stroke-width: 2; }
+      .text { font: 700 24px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #0f172a; }
+      .small { font: 400 18px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #475569; }
+      .label { font: 700 17px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #2563eb; }
+      .danger { font: 700 17px "Arial Unicode MS", "PingFang SC", sans-serif; fill: #dc2626; }
+      .line { fill: none; stroke: #2563eb; stroke-width: 3; marker-end: url(#arrow); }
+      .line-gray { fill: none; stroke: #64748b; stroke-width: 2.5; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #64748b; stroke-width: 2.5; stroke-dasharray: 8 8; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1800" height="1330"/>
+  <g transform="translate(0,-120)">
+
+  <text x="160" y="190" class="phase">1. 启动与校验</text>
+  <text x="700" y="190" class="phase">2. Hash 与任务恢复</text>
+  <text x="1210" y="190" class="phase">3. 上传、合并与收尾</text>
+
+  <rect x="120" y="230" width="360" height="110" rx="18" class="node-blue"/>
+  <text x="300" y="275" text-anchor="middle" class="text">调用 upload(file, params)</text>
+  <text x="300" y="306" text-anchor="middle" class="small">传入 projectId / concurrency / request</text>
+  <text x="300" y="331" text-anchor="middle" class="small">以及 cache methods</text>
+
+  <rect x="120" y="410" width="360" height="120" rx="18" class="node"/>
+  <text x="300" y="455" text-anchor="middle" class="text">校验上传参数</text>
+  <text x="300" y="487" text-anchor="middle" class="small">chunkSize 默认 5MB，最大 10MB</text>
+  <text x="300" y="513" text-anchor="middle" class="small">chunks 必须在 2 - 10000</text>
+
+  <polygon points="300,610 480,710 300,810 120,710" class="decision"/>
+  <text x="300" y="696" text-anchor="middle" class="text">校验通过？</text>
+  <text x="300" y="728" text-anchor="middle" class="small">文件大小 / 分片数量 / 参数完整性</text>
+
+  <rect x="610" y="250" width="380" height="130" rx="18" class="node"/>
+  <text x="800" y="295" text-anchor="middle" class="text">计算整文件 SHA-256</text>
+  <text x="800" y="328" text-anchor="middle" class="small">按 Blob.slice 分段读取</text>
+  <text x="800" y="354" text-anchor="middle" class="small">回调 phase = hashing</text>
+
+  <rect x="610" y="455" width="380" height="120" rx="18" class="node"/>
+  <text x="800" y="500" text-anchor="middle" class="text">读取本地缓存</text>
+  <text x="800" y="532" text-anchor="middle" class="small">getPrivateDb(cacheKey)</text>
+  <text x="800" y="558" text-anchor="middle" class="small">cacheKey 包含 projectId / fileHash 等</text>
+
+  <polygon points="800,655 1000,760 800,865 600,760" class="decision"/>
+  <text x="800" y="746" text-anchor="middle" class="text">存在有效缓存？</text>
+  <text x="800" y="778" text-anchor="middle" class="small">信任 uploadedChunks</text>
+
+  <rect x="1110" y="445" width="420" height="125" rx="18" class="node-orange"/>
+  <text x="1320" y="492" text-anchor="middle" class="text">调用 init 接口</text>
+  <text x="1320" y="524" text-anchor="middle" class="small">POST ?type=init</text>
+  <text x="1320" y="550" text-anchor="middle" class="small">URLSearchParams: checkCode/fileName/chunks/fileSize</text>
+
+  <rect x="1110" y="655" width="420" height="120" rx="18" class="node-green"/>
+  <text x="1320" y="702" text-anchor="middle" class="text">恢复上传任务</text>
+  <text x="1320" y="734" text-anchor="middle" class="small">使用缓存 docId / uploadedChunks</text>
+  <text x="1320" y="760" text-anchor="middle" class="small">跳过已成功分片</text>
+
+  <rect x="1110" y="850" width="420" height="125" rx="18" class="node"/>
+  <text x="1320" y="897" text-anchor="middle" class="text">构建待上传分片队列</text>
+  <text x="1320" y="929" text-anchor="middle" class="small">计算每个分片 SHA-256</text>
+  <text x="1320" y="955" text-anchor="middle" class="small">按 concurrency 并发调度</text>
+
+  <rect x="1110" y="1050" width="420" height="130" rx="18" class="node-blue"/>
+  <text x="1320" y="1097" text-anchor="middle" class="text">上传未完成分片</text>
+  <text x="1320" y="1129" text-anchor="middle" class="small">POST ?type=upload · FormData</text>
+  <text x="1320" y="1155" text-anchor="middle" class="small">失败自动重试，成功后更新进度</text>
+
+  <rect x="610" y="1040" width="380" height="120" rx="18" class="node-green"/>
+  <text x="800" y="1087" text-anchor="middle" class="text">保存分片成功状态</text>
+  <text x="800" y="1119" text-anchor="middle" class="small">savePrivateDb(cacheKey, JSON.stringify(cache))</text>
+  <text x="800" y="1145" text-anchor="middle" class="small">uploadedChunks 追加当前 chunk</text>
+
+  <polygon points="800,1220 995,1310 800,1400 605,1310" class="decision"/>
+  <text x="800" y="1297" text-anchor="middle" class="text">全部分片完成？</text>
+  <text x="800" y="1329" text-anchor="middle" class="small">uploadedChunks.size === chunks</text>
+
+  <rect x="1110" y="1245" width="420" height="120" rx="18" class="node-orange"/>
+  <text x="1320" y="1292" text-anchor="middle" class="text">调用 merge 接口</text>
+  <text x="1320" y="1324" text-anchor="middle" class="small">POST ?type=merge · JSON</text>
+  <text x="1320" y="1350" text-anchor="middle" class="small">docId + 整文件 checkCode</text>
+
+  <rect x="1545" y="1245" width="200" height="120" rx="18" class="node-green"/>
+  <text x="1645" y="1292" text-anchor="middle" class="text">上传成功</text>
+  <text x="1645" y="1324" text-anchor="middle" class="small">删除缓存</text>
+  <text x="1645" y="1350" text-anchor="middle" class="small">返回 result</text>
+
+  <rect x="120" y="950" width="360" height="120" rx="18" class="node-red"/>
+  <text x="300" y="998" text-anchor="middle" class="text">任务失败 / 取消</text>
+  <text x="300" y="1030" text-anchor="middle" class="small">保留缓存</text>
+  <text x="300" y="1056" text-anchor="middle" class="small">下次可断点续传</text>
+
+  <path d="M300 340 L300 410" class="line"/>
+  <path d="M300 530 L300 610" class="line"/>
+  <path d="M480 710 C545 710, 545 315, 610 315" class="line"/>
+  <text x="515" y="682" class="label">是</text>
+  <path d="M300 810 L300 950" class="line-gray"/>
+  <text x="315" y="878" class="danger">否</text>
+
+  <path d="M800 380 L800 455" class="line"/>
+  <path d="M800 575 L800 655" class="line"/>
+  <path d="M1000 760 C1060 760, 1050 508, 1110 508" class="line"/>
+  <text x="1040" y="730" class="label">否</text>
+  <path d="M1000 760 L1110 715" class="line"/>
+  <text x="1032" y="756" class="label">是</text>
+
+  <path d="M1320 570 L1320 655" class="line"/>
+  <path d="M1320 775 L1320 850" class="line"/>
+  <path d="M1320 975 L1320 1050" class="line"/>
+  <path d="M1110 1115 L990 1100" class="line"/>
+  <path d="M800 1160 L800 1220" class="line"/>
+  <path d="M995 1310 L1110 1305" class="line"/>
+  <text x="1018" y="1290" class="label">是</text>
+  <path d="M605 1310 C520 1310, 520 1115, 610 1100" class="line-gray"/>
+  <text x="532" y="1278" class="label">否，继续上传</text>
+  <path d="M1530 1305 L1545 1305" class="line"/>
+
+  <path d="M1110 1115 C1000 1225, 600 1230, 480 1010" class="dash"/>
+  <text x="617" y="1210" class="danger">超过重试次数或 cancel()</text>
+
+  <text x="122" y="1395" class="small">注：pause() 仅暂停调度新分片，已在上传中的分片可自然完成并写入缓存；resume() 继续队列；cancel() 中止请求并保留缓存。</text>
+  </g>
+</svg>
