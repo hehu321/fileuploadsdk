@@ -71,14 +71,14 @@
   <text x="730" y="548" text-anchor="middle" class="small">校验 2 - 10000 个分片</text>
 
   <rect x="955" y="445" width="290" height="120" rx="16" class="box-purple"/>
-  <text x="1100" y="490" text-anchor="middle" class="text">SHA-256 Hasher</text>
+  <text x="1100" y="490" text-anchor="middle" class="text">Worker Hasher</text>
   <text x="1100" y="522" text-anchor="middle" class="small">整文件 checkCode</text>
-  <text x="1100" y="548" text-anchor="middle" class="small">分片 checkCode</text>
+  <text x="1100" y="548" text-anchor="middle" class="small">分片 checkCode / 可注入 hash</text>
 
   <rect x="585" y="640" width="290" height="125" rx="16" class="box-green"/>
   <text x="730" y="687" text-anchor="middle" class="text">Cache Manager</text>
-  <text x="730" y="719" text-anchor="middle" class="small">缓存 docId / uploadedChunks</text>
-  <text x="730" y="745" text-anchor="middle" class="small">恢复时信任本地缓存</text>
+  <text x="730" y="719" text-anchor="middle" class="small">非 hash key 命中任务</text>
+  <text x="730" y="745" text-anchor="middle" class="small">缓存 docId / uploadedChunks</text>
 
   <rect x="955" y="640" width="290" height="125" rx="16" class="box-orange"/>
   <text x="1100" y="687" text-anchor="middle" class="text">Upload Queue</text>
@@ -146,6 +146,6 @@
   <path d="M730 765 L730 835" class="line"/>
 
   <rect x="90" y="1060" width="1640" height="70" rx="16" class="box"/>
-  <text x="130" y="1103" class="small">边界说明：SDK 不内置请求库，不使用 IndexedDB，不强绑定 React；请求鉴权、cookie、baseURL 和本地缓存持久化均由调用方适配。</text>
+  <text x="130" y="1103" class="small">边界说明：SDK 不内置请求库，不使用 IndexedDB；核心不强绑定 React，额外提供 Hook 薄封装；请求、鉴权、缓存和 hash adapter 均可由调用方适配。</text>
   </g>
 </svg>
